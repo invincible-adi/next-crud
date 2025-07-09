@@ -2,12 +2,14 @@
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import axios from 'axios'
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Swal from 'sweetalert2'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserPlus, faUser, faEnvelope, faLock } from '@fortawesome/free-solid-svg-icons';
+import { useDispatch, useSelector } from 'react-redux';
+import { registerUser } from '../store/userSlice';
 
 const schema = yup
     .object()
@@ -23,28 +25,29 @@ const Register = () => {
         resolver: yupResolver(schema),
     });
     const router = useRouter()
+    const dispatch = useDispatch();
+    const { loading, error, isAuthenticated, token } = useSelector((state) => state.user);
+    const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
-    const UserRegister = async (data) => {
-        try {
-            await axios.post('http://localhost:3000/api/register', data);
-
+    useEffect(() => {
+        if (registrationSuccess) {
             Swal.fire({
                 icon: 'success',
-                title: 'Registered!',
-                text: 'Registration was successful.',
+                title: 'Registration Successful',
+                text: 'You can now log in with your new account.',
                 timer: 2000,
-                showConfirmButton: false
+                showConfirmButton: false,
             });
-            router.push('/')
-        } catch (error) {
-            const errorMessage = error.response?.data?.message || 'Something went wrong!';
-            Swal.fire({
-                icon: 'error',
-                title: 'Registration Failed',
-                text: errorMessage
-            });
+            router.push('/login');
         }
-    }
+    }, [registrationSuccess, router]);
+
+    const handleRegister = async (data) => {
+        const resultAction = await dispatch(registerUser(data));
+        if (registerUser.fulfilled.match(resultAction)) {
+            setRegistrationSuccess(true);
+        }
+    };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -58,7 +61,7 @@ const Register = () => {
                         <p className="mt-2 text-blue-100">Join us today</p>
                     </div>
                     <div className="p-6">
-                        <form onSubmit={handleSubmit(UserRegister)} className="space-y-5">
+                        <form onSubmit={handleSubmit(handleRegister)} className="space-y-5">
                             <div>
                                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
                                     <FontAwesomeIcon icon={faUser} className="h-4 w-4" />

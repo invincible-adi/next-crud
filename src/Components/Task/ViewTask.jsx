@@ -1,54 +1,32 @@
 "use client"
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClipboardList, faPlus, faExclamationCircle, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { HashLoader } from 'react-spinners';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchTasks, deleteTask } from '../../store/taskSlice';
 
 function ViewTasks() {
-    const [tasks, setTasks] = useState([]);
-    const [loading, setLoading] = useState(true);
-    let token;
-    try {
-        token = JSON.parse(localStorage.getItem('token'));
-    } catch (error) {
-        token = null;
-    }
     const router = useRouter();
+    const dispatch = useDispatch();
+    const { tasks, loading, error } = useSelector((state) => state.task);
+    const { token, isAuthenticated } = useSelector((state) => state.user);
 
     useEffect(() => {
-        if (!token) {
+        if (!isAuthenticated || !token) {
             router.push('/');
         }
-    }, [token, router]);
+    }, [isAuthenticated, token, router]);
 
-    const fetchTasks = async () => {
-        try {
-            setLoading(true);
-            const res = await axios.get('/api/task', {
-                headers: { "Authorization": `Bearer ${token}` }
-            });
-            setTasks(res.data.tasks);
-        } catch (err) {
-            console.log(err);
-        } finally {
-            setLoading(false);
+    useEffect(() => {
+        if (token) {
+            dispatch(fetchTasks(token));
         }
-    };
+    }, [dispatch, token]);
 
-    const deleteTask = async (id) => {
-        if (window.confirm('Are you sure you want to delete this task?')) {
-            try {
-                await axios.delete('/api/task', {
-                    data: { id },
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                fetchTasks();
-            } catch {
-                alert('Delete failed');
-            }
-        }
+    const handleDelete = (id) => {
+        dispatch(deleteTask({ id, token }));
     };
 
     const getStatusBadge = (status) => {
@@ -59,12 +37,6 @@ function ViewTasks() {
         };
         return `inline-block px-2 py-1 rounded text-xs font-semibold ${statusClasses[status] || 'bg-gray-200 text-gray-800'}`;
     };
-
-    useEffect(() => {
-        if (token) {
-            fetchTasks();
-        }
-    }, [token]);
 
     if (loading) {
         return (
@@ -133,7 +105,7 @@ function ViewTasks() {
                                                 </button>
                                                 <button
                                                     className="flex items-center gap-1 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 rounded transition-colors"
-                                                    onClick={() => deleteTask(t.id)}
+                                                    onClick={() => handleDelete(t.id)}
                                                 >
                                                     <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
                                                     Delete
@@ -174,7 +146,7 @@ function ViewTasks() {
                                             </button>
                                             <button
                                                 className="flex items-center gap-1 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 rounded transition-colors"
-                                                onClick={() => deleteTask(t.id)}
+                                                onClick={() => handleDelete(t.id)}
                                             >
                                                 <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
                                                 Delete

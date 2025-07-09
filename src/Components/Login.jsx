@@ -3,14 +3,15 @@
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Swal from 'sweetalert2';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSignInAlt, faEnvelope, faLock } from '@fortawesome/free-solid-svg-icons';
 import { HashLoader } from 'react-spinners';
-import { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUser, clearError } from '../store/userSlice';
+import { useEffect } from 'react';
 
 const schema = yup.object().shape({
     email: yup.string().email('Please enter a valid email').required('Email is required'),
@@ -23,39 +24,29 @@ const Login = () => {
     });
 
     const router = useRouter();
-    const [loading, setLoading] = useState(false);
+    const dispatch = useDispatch();
+    const { loading, error, isAuthenticated, token } = useSelector((state) => state.user);
 
-    const login = async (data) => {
-        setLoading(true);
-        try {
-            const res = await axios.post("http://localhost:3000/api/login", data);
-            if (res.data.success === true) {
-                const token = res.data.token;
-                localStorage.setItem("token", JSON.stringify(token));
-                Swal.fire({
-                    icon: "success",
-                    title: "Welcome!",
-                    text: "Successfully logged in",
-                    timer: 2000,
-                    showConfirmButton: false,
-                });
-                router.push('/view-task');
-            } else {
-                Swal.fire({
-                    icon: "error",
-                    title: "Login Failed",
-                    text: res.data.message,
-                });
-            }
-        } catch (error) {
-            Swal.fire({
-                icon: "error",
-                title: "Login Failed",
-                text: error.response?.data?.message || "Something went wrong",
-            });
-        } finally {
-            setLoading(false);
+    useEffect(() => {
+        if (isAuthenticated && token) {
+            localStorage.setItem('token', JSON.stringify(token));
+            router.push('/view-task');
         }
+    }, [isAuthenticated, token, router]);
+
+    useEffect(() => {
+        if (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Login Failed',
+                text: error,
+            });
+            dispatch(clearError());
+        }
+    }, [error, dispatch]);
+
+    const handleLogin = async (data) => {
+        dispatch(loginUser(data));
     };
 
     return (
@@ -70,13 +61,7 @@ const Login = () => {
                         <p className="mt-2 text-blue-100">Sign in to your account</p>
                     </div>
                     <div className="p-6">
-                        {loading && (
-                            <div className="flex flex-col items-center mb-4">
-                                <HashLoader color="#2563eb" size={50} />
-                                <span className="mt-2 text-blue-600 font-medium">Logging in...</span>
-                            </div>
-                        )}
-                        <form onSubmit={handleSubmit(login)} className="space-y-5">
+                        <form onSubmit={handleSubmit(handleLogin)} className="space-y-5">
                             <div>
                                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
                                     <FontAwesomeIcon icon={faEnvelope} className="h-4 w-4" />

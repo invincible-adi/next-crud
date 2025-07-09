@@ -1,10 +1,11 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faTag, faThLarge, faCopyright, faRupeeSign, faTimes, faSave } from '@fortawesome/free-solid-svg-icons';
 import { HashLoader } from 'react-spinners';
+import { useDispatch, useSelector } from 'react-redux';
+import { addProduct } from '../../store/productSlice';
 
 function AddProduct() {
   const [product, setProduct] = useState({
@@ -13,7 +14,6 @@ function AddProduct() {
     price: '',
     brand: ''
   });
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
   let token;
   try {
@@ -29,6 +29,13 @@ function AddProduct() {
     }
   }, [token, router]);
 
+  const dispatch = useDispatch();
+  const { loading, error, message } = useSelector((state) => state.product);
+
+  const handleAddProduct = async (product) => {
+    await dispatch(addProduct({ product, token }));
+  };
+
   const handleChange = e => {
     const { name, value } = e.target;
     setProduct(prev => ({
@@ -39,29 +46,11 @@ function AddProduct() {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    setLoading(true);
-    try {
-      await axios.post('/api/product', product, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+    await handleAddProduct(product);
+    if (!error) {
       router.push('/view-product');
-    } catch (err) {
-      alert('Failed to add product');
-    } finally {``
-      setLoading(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="flex flex-col items-center">
-          <HashLoader color="#2563eb" size={70} />
-          <span className="mt-2 text-blue-600 font-medium">Loading...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">

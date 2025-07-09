@@ -1,14 +1,14 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faTag, faFileAlt, faFlag, faTimes, faSave } from '@fortawesome/free-solid-svg-icons';
 import { HashLoader } from 'react-spinners';
+import { useDispatch, useSelector } from 'react-redux';
+import { addTask } from '../../store/taskSlice';
 
 function AddTask() {
   const [task, setTask] = useState({ name: '', description: '', status: 'pending' });
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
   let token;
   try {
@@ -23,20 +23,20 @@ function AddTask() {
     }
   }, [token, router]);
 
+  const dispatch = useDispatch();
+  const { loading, error, message } = useSelector((state) => state.task);
+
   const handleChange = e => setTask({ ...task, [e.target.name]: e.target.value });
+
+  const handleAddTask = async (task) => {
+    await dispatch(addTask({ task, token }));
+  };
 
   const handleSubmit = async e => {
     e.preventDefault();
-    setLoading(true);
-    try {
-      await axios.post('/api/task', task, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+    await handleAddTask(task);
+    if (!error) {
       router.push('/view-task');
-    } catch (err) {
-      alert('Failed to add task');
-    } finally {
-      setLoading(false);
     }
   };
 

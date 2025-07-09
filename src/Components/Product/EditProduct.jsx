@@ -1,10 +1,11 @@
 "use client"
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faTag, faThLarge, faCopyright, faRupeeSign, faTimes, faSave } from '@fortawesome/free-solid-svg-icons';
 import { HashLoader } from 'react-spinners';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchProducts, editProduct } from '../../store/productSlice';
 
 function EditProduct({ id }) {
   const [product, setProduct] = useState({
@@ -13,8 +14,6 @@ function EditProduct({ id }) {
     price: '',
     brand: ''
   });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const router = useRouter();
   let token;
   try {
@@ -29,21 +28,19 @@ function EditProduct({ id }) {
     }
   }, [token, router]);
 
+  const dispatch = useDispatch();
+  const { products, loading, error, message } = useSelector((state) => state.product);
+
   useEffect(() => {
-    if (token && id) {
-      setLoading(true);
-      axios.get(`/api/product?id=${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      }).then(res => {
-        if (res.data && res.data.product) {
-          setProduct(res.data.product);
-        }
-        setLoading(false);
-      }).catch(() => {
-        setLoading(false);
-      });
+    dispatch(fetchProducts(token));
+  }, [dispatch, token]);
+
+  useEffect(() => {
+    if (products && id) {
+      const found = products.find((p) => p.id === Number(id));
+      if (found) setProduct(found);
     }
-  }, [id, token]);
+  }, [products, id]);
 
   const handleChange = e => {
     const { name, value } = e.target;
@@ -53,19 +50,16 @@ function EditProduct({ id }) {
     }));
   };
 
+  const handleEditProduct = async (product) => {
+    await dispatch(editProduct({ product, token }));
+    if (!error) {
+      router.push('/view-product');
+    }
+  };
+
   const handleSubmit = async e => {
     e.preventDefault();
-    setSaving(true);
-    try {
-      await axios.put('/api/product', { id, ...product }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      router.push('/view-product');
-    } catch (err) {
-      alert('Update failed');
-    } finally {
-      setSaving(false);
-    }
+    await handleEditProduct({ id, ...product });
   };
 
   if (loading) {
@@ -172,9 +166,9 @@ function EditProduct({ id }) {
                 <button
                   type="submit"
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors flex items-center gap-1"
-                  disabled={saving}
+                  disabled={loading}
                 >
-                  {saving ? (
+                  {loading ? (
                     <>
                       <HashLoader color="#fff" size={20} />
                       <span className="ml-2">Updating...</span>

@@ -1,15 +1,14 @@
 "use client"
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faTag, faFileAlt, faFlag, faTimes, faSave } from '@fortawesome/free-solid-svg-icons';
 import { HashLoader } from 'react-spinners';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchTasks, editTask } from '../../store/taskSlice';
 
 function EditTask({ id }) {
   const [task, setTask] = useState({ name: '', description: '', status: 'pending' });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const router = useRouter();
   let token;
   try {
@@ -18,6 +17,9 @@ function EditTask({ id }) {
     token = null;
   }
 
+  const dispatch = useDispatch();
+  const { tasks, loading, error, message } = useSelector((state) => state.task);
+
   useEffect(() => {
     if (!token) {
       router.push('/');
@@ -25,36 +27,28 @@ function EditTask({ id }) {
   }, [token, router]);
 
   useEffect(() => {
-    if (token && id) {
-      setLoading(true);
-      axios.get(`/api/task?id=${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      }).then(res => {
-        if (res.data && res.data.task) {
-          setTask(res.data.task);
-        }
-        setLoading(false);
-      }).catch(() => {
-        setLoading(false);
-      });
+    dispatch(fetchTasks(token));
+  }, [dispatch, token]);
+
+  useEffect(() => {
+    if (tasks && id) {
+      const found = tasks.find((t) => t.id === Number(id));
+      if (found) setTask(found);
     }
-  }, [id, token]);
+  }, [tasks, id]);
 
   const handleChange = e => setTask({ ...task, [e.target.name]: e.target.value });
 
+  const handleEditTask = async (task) => {
+    await dispatch(editTask({ task, token }));
+    if (!error) {
+      router.push('/view-task');
+    }
+  };
+
   const handleSubmit = async e => {
     e.preventDefault();
-    setSaving(true);
-    try {
-      await axios.put('/api/task', { id, ...task }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      router.push('/view-task');
-    } catch (err) {
-      alert('Update failed');
-    } finally {
-      setSaving(false);
-    }
+    await handleEditTask({ id, ...task });
   };
 
   if (loading) {
@@ -140,9 +134,9 @@ function EditTask({ id }) {
                 <button
                   type="submit"
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors flex items-center gap-1"
-                  disabled={saving}
+                  disabled={loading}
                 >
-                  {saving ? (
+                  {loading ? (
                     <>
                       <HashLoader color="#fff" size={20} />
                       <span className="ml-2">Updating...</span>

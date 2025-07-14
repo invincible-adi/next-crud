@@ -10,7 +10,7 @@ const page = () => {
         if (typeof window !== 'undefined') {
             const token = localStorage.getItem('token');
             if (token) {
-                router.replace('/view-task');
+                router.replace('/dashboard');
             }
         }
     }, [router]);

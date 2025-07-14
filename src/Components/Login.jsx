@@ -30,7 +30,8 @@ const Login = () => {
     useEffect(() => {
         if (isAuthenticated && token) {
             localStorage.setItem('token', JSON.stringify(token));
-            router.push('/view-task');
+            // Redirect to dashboard after login
+            router.push('/dashboard');
         }
     }, [isAuthenticated, token, router]);
 

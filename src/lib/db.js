@@ -1,18 +1,22 @@
-import mysql from 'mysql2';
+import mongoose from 'mongoose';
 
-const db = mysql.createConnection({
-    host: process.env.DATABASE_HOST || 'localhost',
-    user: process.env.DATABASE_USER || 'root',
-    password: process.env.DATABASE_PASSWORD || '',
-    database: 'crudtask',
-});
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/crudtask';
 
-db.connect((err) => {
-    if (err) {
-        console.error('Database connection failed:', err.message);
-    } else {
-        console.log('Database Connected');
+let isConnected = false;
+
+export async function connectDB() {
+    if (isConnected) {
+        return;
     }
-});
-
-export default db; 
+    try {
+        await mongoose.connect(MONGODB_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+        isConnected = true;
+        console.log('MongoDB Connected');
+    } catch (err) {
+        console.error('MongoDB connection failed:', err.message);
+        throw err;
+    }
+} 

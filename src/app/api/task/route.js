@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import db from '@/lib/db';
+import { connectDB } from '@/lib/db';
+import Task from '@/models/Task';
 
 function verifyToken(req) {
     const authHeader = req.headers.get('authorization');
@@ -14,50 +15,58 @@ function verifyToken(req) {
 }
 
 export async function GET(req) {
+    await connectDB();
     const user = verifyToken(req);
     if (!user) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
-    return new Promise((resolve) => {
-        db.query('SELECT * FROM task WHERE user_id = ?', [user.email], (err, result) => {
-            if (err) return resolve(NextResponse.json({ success: false, message: err.message }, { status: 500 }));
-            return resolve(NextResponse.json({ success: true, tasks: result }));
-        });
-    });
+    try {
+        const tasks = await Task.find({ user_id: user.email });
+        return NextResponse.json({ success: true, tasks });
+    } catch (err) {
+        return NextResponse.json({ success: false, message: err.message }, { status: 500 });
+    }
 }
 
 export async function POST(req) {
+    await connectDB();
     const user = verifyToken(req);
     if (!user) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     const { name, description, status } = await req.json();
-    return new Promise((resolve) => {
-        db.query('INSERT INTO task (name, description, status, user_id) VALUES (?, ?, ?, ?)', [name, description, status, user.email], (err, result) => {
-            if (err) return resolve(NextResponse.json({ success: false, message: err.message }, { status: 500 }));
-            return resolve(NextResponse.json({ success: true, message: 'Task added' }));
-        });
-    });
+    try {
+        await Task.create({ name, description, status, user_id: user.email });
+        return NextResponse.json({ success: true, message: 'Task added' });
+    } catch (err) {
+        return NextResponse.json({ success: false, message: err.message }, { status: 500 });
+    }
 }
 
 export async function PUT(req) {
+    await connectDB();
     const user = verifyToken(req);
     if (!user) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     const { id, name, description, status } = await req.json();
-    return new Promise((resolve) => {
-        db.query('UPDATE task SET name=?, description=?, status=? WHERE id=? AND user_id=?', [name, description, status, id, user.email], (err, result) => {
-            if (err) return resolve(NextResponse.json({ success: false, message: err.message }, { status: 500 }));
-            if (result.affectedRows === 0) return resolve(NextResponse.json({ success: false, message: 'Not found' }, { status: 404 }));
-            return resolve(NextResponse.json({ success: true, message: 'Task updated' }));
-        });
-    });
+    try {
+        const updated = await Task.findOneAndUpdate(
+            { _id: id, user_id: user.email },
+            { name, description, status },
+            { new: true }
+        );
+        if (!updated) return NextResponse.json({ success: false, message: 'Not found' }, { status: 404 });
+        return NextResponse.json({ success: true, message: 'Task updated' });
+    } catch (err) {
+        return NextResponse.json({ success: false, message: err.message }, { status: 500 });
+    }
 }
 
 export async function DELETE(req) {
+    await connectDB();
     const user = verifyToken(req);
     if (!user) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     const { id } = await req.json();
-    return new Promise((resolve) => {
-        db.query('DELETE FROM task WHERE id=? AND user_id=?', [id, user.email], (err, result) => {
-            if (err) return resolve(NextResponse.json({ success: false, message: err.message }, { status: 500 }));
-            if (result.affectedRows === 0) return resolve(NextResponse.json({ success: false, message: 'Not found' }, { status: 404 }));
-            return resolve(NextResponse.json({ success: true, message: 'Task deleted' }));
-        });
-    });
+    try {
+        const deleted = await Task.findOneAndDelete({ _id: id, user_id: user.email });
+        if (!deleted) return NextResponse.json({ success: false, message: 'Not found' }, { status: 404 });
+        return NextResponse.json({ success: true, message: 'Task deleted' });
+    } catch (err) {
+        return NextResponse.json({ success: false, message: err.message }, { status: 500 });
+    }
 } 

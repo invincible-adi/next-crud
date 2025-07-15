@@ -1,7 +1,6 @@
 "use client"
 import React, { useEffect } from 'react'
 import Login from '@/Components/Login'
-import Navbaar from '@/Components/Common/Navbaar'
 import { useRouter } from 'next/navigation'
 
 const page = () => {
@@ -16,7 +15,6 @@ const page = () => {
     }, [router]);
     return (
         <>
-            <Navbaar />
             <Login />
         </>
     )

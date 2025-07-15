@@ -2,163 +2,180 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBox, faPlus, faExclamationCircle, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faBox, faPlus, faExclamationCircle, faEdit, faTrash, faDollarSign, faTags } from '@fortawesome/free-solid-svg-icons';
 import { HashLoader } from 'react-spinners';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts, deleteProduct } from '../../store/productSlice';
 
 function ViewProducts() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  let token;
-  try {
-    token = JSON.parse(localStorage.getItem('token'));
-  } catch (error) {
-    token = null;
-  }
   const router = useRouter();
   const dispatch = useDispatch();
-  const { products: stateProducts, loading: stateLoading, error } = useSelector((state) => state.product);
+  const { products, loading, error } = useSelector((state) => state.product);
+  const { token, isAuthenticated, user } = useSelector((state) => state.user);
 
   useEffect(() => {
-    if (!token) {
+    if (!isAuthenticated || !token) {
       router.push('/');
     }
-  }, [token, router]);
+  }, [isAuthenticated, token, router]);
 
   useEffect(() => {
-    dispatch(fetchProducts(token));
+    if (token) {
+      dispatch(fetchProducts(token));
+    }
   }, [dispatch, token]);
 
   const handleDelete = (id) => {
     dispatch(deleteProduct({ id, token }));
   };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR'
-    }).format(price);
-  };
+  // Calculate statistics
+  const totalProducts = products.length;
+  const totalValue = products.reduce((sum, product) => sum + (parseFloat(product.price) || 0), 0);
+  const uniqueCategories = [...new Set(products.map(product => product.category))].length;
+  const uniqueBrands = [...new Set(products.map(product => product.brand))].length;
 
-  if (stateLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="flex flex-col items-center">
-          <HashLoader color="#2563eb" size={70} />
-          <span className="mt-2 text-blue-600 font-medium">Loading...</span>
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex items-center justify-center h-96">
+          <div className="flex flex-col items-center">
+            <HashLoader color="#2563eb" size={70} />
+            <span className="mt-4 text-gray-600 font-medium">Loading your products...</span>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      <div className="max-w-5xl mx-auto px-4">
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-          <h2 className="text-2xl font-bold flex items-center gap-2 text-blue-700">
-            <FontAwesomeIcon icon={faBox} className="h-6 w-6" />
-            My Products
-          </h2>
-          <button
-            className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow transition-colors"
-            onClick={() => router.push('/add-product')}
-          >
-            <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
-            Add Product
-          </button>
-        </div>
-        {/* Desktop Table View */}
-        <div className="hidden lg:block">
-          <div className="bg-white shadow rounded-lg overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {stateProducts.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="text-center py-8 text-gray-400">
-                      <FontAwesomeIcon icon={faExclamationCircle} className="h-8 w-8 mx-auto mb-2" />
-                      No products found. Add your first product!
-                    </td>
-                  </tr>
-                ) : (
-                  stateProducts.map(p => (
-                    <tr key={p.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{p.id}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{p.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-semibold">
-                          {p.category || 'N/A'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.brand || 'N/A'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="font-bold text-green-600">{formatPrice(p.price)}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap flex gap-2">
-                        <button
-                          className="flex items-center gap-1 px-3 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 rounded transition-colors"
-                          onClick={() => router.push(`/edit-product/${p.id}`)}
-                        >
-                          <FontAwesomeIcon icon={faEdit} className="h-4 w-4" />
-                          Edit
-                        </button>
-                        <button
-                          className="flex items-center gap-1 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 rounded transition-colors"
-                          onClick={() => handleDelete(p.id)}
-                        >
-                          <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Product Dashboard</h1>
+              <p className="text-gray-600 mt-1">Welcome back, {user?.name || 'User'}! Here's your product overview.</p>
+            </div>
+            <button
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105"
+              onClick={() => router.push('/add-product')}
+            >
+              <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
+              Add New Product
+            </button>
           </div>
         </div>
-        {/* Mobile Card View */}
-        <div className="lg:hidden mt-6">
-          {stateProducts.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">
-              <FontAwesomeIcon icon={faExclamationCircle} className="h-8 w-8 mx-auto mb-2" />
-              No products found. Add your first product!
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Products</p>
+                <p className="text-3xl font-bold text-gray-900">{totalProducts}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <FontAwesomeIcon icon={faBox} className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Value</p>
+                <p className="text-3xl font-bold text-green-600">${totalValue.toFixed(2)}</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <FontAwesomeIcon icon={faDollarSign} className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Categories</p>
+                <p className="text-3xl font-bold text-blue-400">{uniqueCategories}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
+                <FontAwesomeIcon icon={faTags} className="h-6 w-6 text-blue-400" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Brands</p>
+                <p className="text-3xl font-bold text-yellow-600">{uniqueBrands}</p>
+              </div>
+              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <FontAwesomeIcon icon={faTags} className="h-6 w-6 text-yellow-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Product List */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900">Your Products</h2>
+          </div>
+
+          {products.length === 0 ? (
+            <div className="text-center py-12">
+              <FontAwesomeIcon icon={faExclamationCircle} className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No products yet</h3>
+              <p className="text-gray-500 mb-6">Get started by adding your first product!</p>
+              <button
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors"
+                onClick={() => router.push('/add-product')}
+              >
+                <FontAwesomeIcon icon={faPlus} className="h-4 w-4 mr-2" />
+                Add First Product
+              </button>
             </div>
           ) : (
-            <div className="grid gap-4">
-              {stateProducts.map(p => (
-                <div key={p.id} className="bg-white shadow rounded-lg p-4 flex flex-col gap-2">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-semibold text-lg text-gray-900">{p.name}</h3>
-                    <span className="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-semibold">
-                      {p.category || 'N/A'}
-                    </span>
-                  </div>
-                  <div className="text-gray-500 text-sm">Brand: {p.brand || 'N/A'}</div>
-                  <div className="font-bold text-green-600">{formatPrice(p.price)}</div>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-xs text-gray-400">ID: {p.id}</span>
-                    <div className="flex gap-2">
+            <div className="divide-y divide-gray-200">
+              {products.map(product => (
+                <div key={product.id} className="p-6 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900">{product.name}</h3>
+                        <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold border bg-blue-100 text-blue-800 border-blue-200">
+                          <FontAwesomeIcon icon={faBox} className="h-3 w-3 mr-1" />
+                          {product.category || 'No category'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                        <span className="flex items-center gap-1">
+                          <FontAwesomeIcon icon={faTags} className="h-3 w-3" />
+                          {product.category || 'No category'}
+                        </span>
+                        <span>•</span>
+                        <span>{product.brand || 'No brand'}</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <span>ID: {product.id}</span>
+                        <span>•</span>
+                        <span>Created by: {user?.email || 'Unknown'}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-4">
                       <button
-                        className="flex items-center gap-1 px-3 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 rounded transition-colors"
-                        onClick={() => router.push(`/edit-product/${p.id}`)}
+                        className="flex items-center gap-2 px-4 py-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 rounded-lg transition-colors"
+                        onClick={() => router.push(`/edit-product/${product.id}`)}
                       >
                         <FontAwesomeIcon icon={faEdit} className="h-4 w-4" />
                         Edit
                       </button>
                       <button
-                        className="flex items-center gap-1 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 rounded transition-colors"
-                        onClick={() => handleDelete(p.id)}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg transition-colors"
+                        onClick={() => handleDelete(product.id)}
                       >
                         <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
                         Delete

@@ -1,22 +1,10 @@
+// Database connection using Mongoose
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/crudtask';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/crudtest';
 
-let isConnected = false;
+if (!global._mongooseConnection) {
+    global._mongooseConnection = mongoose.connect(MONGODB_URI);
+}
 
-export async function connectDB() {
-    if (isConnected) {
-        return;
-    }
-    try {
-        await mongoose.connect(MONGODB_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-        isConnected = true;
-        console.log('MongoDB Connected');
-    } catch (err) {
-        console.error('MongoDB connection failed:', err.message);
-        throw err;
-    }
-} 
+export default global._mongooseConnection; 

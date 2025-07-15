@@ -27,24 +27,33 @@ const Sidebar = () => {
       {/* Sidebar overlay for mobile */}
       {open && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-30 z-40 md:hidden"
+          className="fixed inset-0 bg-black bg-opacity-40 z-40 md:hidden"
           onClick={() => setOpen(false)}
         />
       )}
       {/* Sidebar */}
       <aside
-        className={`fixed z-50 md:static left-0 top-0 h-screen min-h-screen w-64 bg-white shadow-md border-r border-gray-100 flex flex-col transition-transform duration-300 ${open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
+        className={`fixed z-50 left-0 top-0 h-screen min-h-screen bg-white shadow-md border-r border-gray-100 flex flex-col transition-transform duration-300
+        w-72
+        -translate-x-full
+        md:static md:translate-x-0 md:w-64
+        ${open ? 'translate-x-0 w-full max-w-xs sm:max-w-sm' : ''}
+        md:max-w-none
+        `}
+        style={{
+          maxWidth: open ? '100vw' : undefined,
+        }}
       >
         {/* Header/Profile */}
         <div className="flex flex-col items-center py-8 px-4 border-b border-gray-100">
           <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center mb-3 overflow-hidden shadow">
             <FontAwesomeIcon icon={faUser} className="h-10 w-10 text-blue-400" />
           </div>
-          <div className="text-lg font-semibold text-gray-800">{user?.name || 'User'}</div>
-          <div className="text-sm text-gray-500">{user?.email || 'user@example.com'}</div>
+          <div className="text-lg font-semibold text-gray-800 text-center break-words">{user?.name || 'User'}</div>
+          <div className="text-sm text-gray-500 text-center break-words">{user?.email || 'user@example.com'}</div>
         </div>
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-2">
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
           {navLinks.map((link) => (
             <Link
               key={link.name}
@@ -80,12 +89,15 @@ const Sidebar = () => {
         </button>
       </aside>
       {/* Sidebar open button (hamburger) */}
-      <button
-        className="fixed top-4 left-4 z-50 md:hidden bg-white border border-gray-200 rounded-full p-2 shadow-md hover:bg-blue-50 transition-colors"
-        onClick={() => setOpen(true)}
-      >
-        <FontAwesomeIcon icon={faBars} className="h-6 w-6 text-blue-700" />
-      </button>
+      {!open && (
+        <button
+          className="fixed top-4 left-4 z-50 md:hidden bg-white border border-gray-200 rounded-full p-2 shadow-md hover:bg-blue-50 transition-colors"
+          onClick={() => setOpen(true)}
+          aria-label="Open sidebar"
+        >
+          <FontAwesomeIcon icon={faBars} className="h-6 w-6 text-blue-700" />
+        </button>
+      )}
     </>
   );
 };

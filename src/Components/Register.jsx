@@ -21,7 +21,7 @@ const schema = yup
     .required();
 
 const Register = () => {
-    const { register, handleSubmit, formState: { errors }, } = useForm({
+    const { register, handleSubmit, formState: { errors }, reset } = useForm({
         resolver: yupResolver(schema),
     });
     const router = useRouter()
@@ -38,9 +38,10 @@ const Register = () => {
                 timer: 2000,
                 showConfirmButton: false,
             });
+            reset();
             router.push('/login');
         }
-    }, [registrationSuccess, router]);
+    }, [registrationSuccess, router, reset]);
 
     const handleRegister = async (data) => {
         const resultAction = await dispatch(registerUser(data));

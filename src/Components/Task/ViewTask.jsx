@@ -71,9 +71,9 @@ function ViewTasks() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header Section */}
                 <div className="mb-8">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900">Task Dashboard</h1>
+                    <div className="flex flex-col sm:flex-row justify-between  sm:items-center gap-4">
+                        <div className='text-center'>
+                            <h1 className="text-3xl font-bold  text-gray-900">Task Dashboard</h1>
                             <p className="text-gray-600 mt-1">Welcome back, {user?.name || 'User'}! Here's your task overview.</p>
                         </div>
                         <button
@@ -155,8 +155,8 @@ function ViewTasks() {
                         </div>
                     ) : (
                         <div className="divide-y divide-gray-200">
-                            {tasks.map(task => (
-                                <div key={task.id} className="p-6 hover:bg-gray-50 transition-colors">
+                            {tasks.map((task, idx) => (
+                                <div key={task._id || task.id || idx} className="p-6 hover:bg-gray-50 transition-colors">
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-3 mb-2">

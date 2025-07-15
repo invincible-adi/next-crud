@@ -25,15 +25,16 @@ const Login = () => {
 
     const router = useRouter();
     const dispatch = useDispatch();
-    const { loading, error, isAuthenticated, token } = useSelector((state) => state.user);
+    const { loading, error, isAuthenticated, token, user } = useSelector((state) => state.user);
 
     useEffect(() => {
-        if (isAuthenticated && token) {
+        if (isAuthenticated && token && user) {
             localStorage.setItem('token', JSON.stringify(token));
+            localStorage.setItem('user', JSON.stringify(user));
             // Redirect to dashboard after login
             router.push('/dashboard');
         }
-    }, [isAuthenticated, token, router]);
+    }, [isAuthenticated, token, user, router]);
 
     useEffect(() => {
         if (error) {

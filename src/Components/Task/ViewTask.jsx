@@ -176,14 +176,14 @@ function ViewTasks() {
                                         <div className="flex items-center gap-2 ml-4">
                                             <button
                                                 className="flex items-center gap-2 px-4 py-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 rounded-lg transition-colors"
-                                                onClick={() => router.push(`/edit-task/${task.id}`)}
+                                                onClick={() => router.push(`/edit-task/${task._id}`)}
                                             >
                                                 <FontAwesomeIcon icon={faEdit} className="h-4 w-4" />
                                                 Edit
                                             </button>
                                             <button
                                                 className="flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg transition-colors"
-                                                onClick={() => handleDelete(task.id)}
+                                                onClick={() => handleDelete(task._id)}
                                             >
                                                 <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
                                                 Delete

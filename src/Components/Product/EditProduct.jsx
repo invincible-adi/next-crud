@@ -7,7 +7,8 @@ import { HashLoader } from 'react-spinners';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts, editProduct } from '../../store/productSlice';
 
-function EditProduct({ id }) {
+function EditProduct() {
+  const { id } = useParams();
   const [product, setProduct] = useState({
     name: '',
     category: '',
@@ -37,7 +38,7 @@ function EditProduct({ id }) {
 
   useEffect(() => {
     if (products && id) {
-      const found = products.find((p) => p.id === Number(id));
+      const found = products.find((p) => p._id === id);
       if (found) setProduct(found);
     }
   }, [products, id]);

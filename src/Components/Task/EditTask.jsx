@@ -7,7 +7,8 @@ import { HashLoader } from 'react-spinners';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchTasks, editTask } from '../../store/taskSlice';
 
-function EditTask({ id }) {
+function EditTask() {
+  const { id } = useParams();
   const [task, setTask] = useState({ name: '', description: '', status: 'pending' });
   const router = useRouter();
   let token;
@@ -32,7 +33,7 @@ function EditTask({ id }) {
 
   useEffect(() => {
     if (tasks && id) {
-      const found = tasks.find((t) => t.id === Number(id));
+      const found = tasks.find((t) => t._id === id);
       if (found) setTask(found);
     }
   }, [tasks, id]);
